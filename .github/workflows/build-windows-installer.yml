@@ -43,6 +43,39 @@ jobs:
           }
           $candle.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
+      - name: Build and verify packaged application
+        shell: pwsh
+        run: |
+          .\scripts\build-windows-app.ps1 -PackageType app-image -Console
+
+          $appExe = Join-Path $PWD 'windows-app\Electro Accountant\Electro Accountant.exe'
+          $standardOutput = Join-Path $env:RUNNER_TEMP 'electro-accountant.stdout.log'
+          $standardError = Join-Path $env:RUNNER_TEMP 'electro-accountant.stderr.log'
+          $process = Start-Process -FilePath $appExe -PassThru -RedirectStandardOutput $standardOutput -RedirectStandardError $standardError
+
+          $started = $false
+          for ($attempt = 1; $attempt -le 15; $attempt++) {
+            Start-Sleep -Seconds 1
+            try {
+              $response = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -TimeoutSec 2
+              if ($response.StatusCode -eq 200) {
+                $started = $true
+                break
+              }
+            } catch {
+              if ($process.HasExited) { break }
+            }
+          }
+
+          if (-not $started) {
+            if (Test-Path $standardOutput) { Get-Content $standardOutput | Write-Host }
+            if (Test-Path $standardError) { Get-Content $standardError | Write-Host }
+            throw "The packaged application did not start its local server."
+          }
+
+          Invoke-WebRequest -Method Post -Uri 'http://127.0.0.1:8080/api/application/stop' -TimeoutSec 5 | Out-Null
+          $process.WaitForExit(10000) | Out-Null
+
       - name: Build installer
         shell: pwsh
         run: .\scripts\build-windows-app.ps1 -PackageType exe

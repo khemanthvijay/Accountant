@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [ValidateSet('app-image', 'exe', 'msi')]
-    [string]$PackageType = 'app-image'
+    [string]$PackageType = 'app-image',
+    [switch]$Console
 )
 
 $ErrorActionPreference = 'Stop'
@@ -66,6 +67,10 @@ $jpackageArguments = @(
 
 if ($PackageType -ne 'app-image') {
     $jpackageArguments += @('--win-dir-chooser', '--win-menu', '--win-shortcut')
+}
+
+if ($Console) {
+    $jpackageArguments += '--win-console'
 }
 
 & jpackage @jpackageArguments
