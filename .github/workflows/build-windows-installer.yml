@@ -36,11 +36,12 @@ jobs:
           if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
             choco install wixtoolset --no-progress --yes
           }
-          $wixBin = Join-Path ${env:ProgramFiles(x86)} 'WiX Toolset v3.11\bin'
-          if (-not (Test-Path (Join-Path $wixBin 'candle.exe'))) {
+          $candle = Get-ChildItem -Path ${env:ProgramFiles(x86)} -Filter 'candle.exe' -File -Recurse -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if (-not $candle) {
             throw "WiX Toolset was not installed correctly."
           }
-          $wixBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $candle.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build installer
         shell: pwsh
