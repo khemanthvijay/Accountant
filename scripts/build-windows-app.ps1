@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('app-image', 'msi')]
+    [ValidateSet('app-image', 'exe', 'msi')]
     [string]$PackageType = 'app-image'
 )
 
@@ -57,7 +57,7 @@ $jpackageArguments = @(
     '--add-modules', 'java.desktop'
 )
 
-if ($PackageType -eq 'msi') {
+if ($PackageType -ne 'app-image') {
     $jpackageArguments += @('--win-dir-chooser', '--win-menu', '--win-shortcut')
 }
 

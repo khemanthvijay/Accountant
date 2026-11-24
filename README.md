@@ -21,11 +21,22 @@ This produces a portable application at:
 windows-app\Electro Accountant\Electro Accountant.exe
 ```
 
-To produce an MSI installer instead, install WiX Toolset and run:
+To produce a Windows installer `.exe`, install WiX Toolset and run:
+
+```powershell
+.\scripts\build-windows-app.ps1 -PackageType exe
+```
+
+To produce an MSI installer instead:
 
 ```powershell
 .\scripts\build-windows-app.ps1 -PackageType msi
 ```
+
+The included GitHub Actions workflow builds the Windows `.exe` on GitHub's Windows
+runner. After pushing this workflow, open **Actions → Build Windows installer → Run
+workflow**, then download `Electro-Accountant-1.0.2-Windows-Installer` from the
+completed run.
 
 `jpackage` produces native packages only for the operating system on which it runs. A
 Linux Docker container cannot create the Windows `.exe`/MSI. You can either run the
