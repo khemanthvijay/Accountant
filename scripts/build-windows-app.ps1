@@ -37,6 +37,10 @@ if (-not (Test-Path -LiteralPath $jarPath)) {
     throw "Expected application jar was not produced: $jarPath"
 }
 
+if (-not $env:JAVA_HOME -or -not (Test-Path -LiteralPath $env:JAVA_HOME)) {
+    throw "JAVA_HOME must point to the JDK that runs jpackage."
+}
+
 if (Test-Path -LiteralPath $outputPath) {
     Remove-Item -LiteralPath $outputPath -Recurse -Force
 }
@@ -51,14 +55,13 @@ $jpackageArguments = @(
     '--input', (Join-Path $projectRoot 'target'),
     '--main-jar', (Split-Path -Leaf $jarPath),
     '--dest', $outputPath,
+    # Use the complete JDK runtime. Spring Boot is an executable fat jar, so its
+    # nested dependencies cannot be reliably analyzed by jlink during packaging.
+    # A larger installer is preferable to a launcher that cannot start its JVM.
+    '--runtime-image', $env:JAVA_HOME,
     '--java-options', '-Delectro.accountant.open-browser=true',
     '--java-options', '-Delectro.accountant.desktop-mode=true',
-    '--java-options', '-Dserver.address=127.0.0.1',
-    # Spring Boot's dependencies live inside the executable jar, where jpackage
-    # cannot reliably inspect them.  Package the Java SE modules plus the two JDK
-    # modules commonly required by Spring/SQLite rather than producing a tiny,
-    # incomplete runtime image.
-    '--add-modules', 'java.se,jdk.unsupported,jdk.zipfs'
+    '--java-options', '-Dserver.address=127.0.0.1'
 )
 
 if ($PackageType -ne 'app-image') {
