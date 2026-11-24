@@ -1,0 +1,9 @@
+package com.electroaccountant.reports;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import com.electroaccountant.shared.Money;
+@Service public class ProfitLossService { private final JdbcTemplate jdbc; public ProfitLossService(JdbcTemplate jdbc){this.jdbc=jdbc;} public ProfitLossResponse report(LocalDate from,LocalDate to){if(to.isBefore(from))throw new IllegalArgumentException("To date must be on or after from date");long sales=amount("SELECT COALESCE(SUM(credit_minor-debit_minor),0) FROM journal_line jl JOIN journal_entry je ON je.id=jl.journal_entry_id WHERE jl.account_code='SALES' AND je.entry_date BETWEEN ? AND ?",from,to),cogs=amount("SELECT COALESCE(SUM(debit_minor-credit_minor),0) FROM journal_line jl JOIN journal_entry je ON je.id=jl.journal_entry_id WHERE jl.account_code='COST_OF_GOODS_SOLD' AND je.entry_date BETWEEN ? AND ?",from,to);Map<String,Long> raw=new LinkedHashMap<>();jdbc.query("SELECT account_name,COALESCE(SUM(debit_minor-credit_minor),0) amount FROM journal_line jl JOIN journal_entry je ON je.id=jl.journal_entry_id WHERE jl.account_code LIKE 'EXPENSE_%' AND je.entry_date BETWEEN ? AND ? GROUP BY account_code,account_name ORDER BY account_name",rs->{raw.put(rs.getString("account_name"),rs.getLong("amount"));},from.toString(),to.toString());Map<String,BigDecimal> expenses=new LinkedHashMap<>();raw.forEach((k,v)->expenses.put(k,Money.fromMinor(v)));long total=raw.values().stream().mapToLong(Long::longValue).sum();return new ProfitLossResponse(from,to,Money.fromMinor(sales),Money.fromMinor(cogs),Money.fromMinor(sales-cogs),expenses,Money.fromMinor(total),Money.fromMinor(sales-cogs-total));}private long amount(String sql,LocalDate from,LocalDate to){Long n=jdbc.queryForObject(sql,Long.class,from.toString(),to.toString());return n==null?0:n;} }

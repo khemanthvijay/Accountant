@@ -1,0 +1,7 @@
+package com.electroaccountant.expenses;
+import java.time.*;
+import java.util.*;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import com.electroaccountant.receivables.ReceiptMethod;
+@Repository public class ExpenseRepository { private final JdbcTemplate jdbc; public ExpenseRepository(JdbcTemplate jdbc){this.jdbc=jdbc;} public void insert(String id,CreateExpenseRequest r,String typeId,long amount,String description){jdbc.update("INSERT INTO expense_entry (id,expense_date,expense_type,expense_type_id,description,supplier_id,payment_type,payment_method,reference_number,notes,amount_minor,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",id,r.expenseDate().toString(),"OTHER",typeId,description,null,"CASH","CASH",null,clean(r.notes()),amount,Instant.now().toString());} public List<Row> all(){return jdbc.query("SELECT e.id,e.expense_date,e.expense_type_id,t.name expense_type_name,e.description,e.notes,e.amount_minor FROM expense_entry e LEFT JOIN expense_type_master t ON t.id=e.expense_type_id ORDER BY e.expense_date DESC,e.created_at DESC",(rs,n)->new Row(rs.getString("id"),LocalDate.parse(rs.getString("expense_date")),rs.getString("expense_type_id"),rs.getString("expense_type_name"),rs.getString("description"),rs.getString("notes"),rs.getLong("amount_minor")));} private String clean(String v){return v==null||v.isBlank()?null:v.trim();} public record Row(String id,LocalDate date,String typeId,String typeName,String description,String notes,long amount){} }
