@@ -54,7 +54,11 @@ $jpackageArguments = @(
     '--java-options', '-Delectro.accountant.open-browser=true',
     '--java-options', '-Delectro.accountant.desktop-mode=true',
     '--java-options', '-Dserver.address=127.0.0.1',
-    '--add-modules', 'java.desktop'
+    # Spring Boot's dependencies live inside the executable jar, where jpackage
+    # cannot reliably inspect them.  Package the Java SE modules plus the two JDK
+    # modules commonly required by Spring/SQLite rather than producing a tiny,
+    # incomplete runtime image.
+    '--add-modules', 'java.se,jdk.unsupported,jdk.zipfs'
 )
 
 if ($PackageType -ne 'app-image') {
