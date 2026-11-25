@@ -1,0 +1,13 @@
+target/
+.idea/
+*.iml
+data/
+*.db
+*.db-wal
+*.db-shm
+.env
+target/
+data/
+frontend/node_modules/
+frontend/dist/
+windows-app/
