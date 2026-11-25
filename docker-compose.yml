@@ -6,7 +6,7 @@ services:
       SERVER_ADDRESS: 0.0.0.0
       ELECTRO_ACCOUNTANT_DATA_DIR: /data
     volumes:
-      - accountant-data:/data
+      - electro-accountant-v102-data:/data
     expose:
       - "8080"
     restart: unless-stopped
@@ -21,4 +21,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  accountant-data:
+  electro-accountant-v102-data:

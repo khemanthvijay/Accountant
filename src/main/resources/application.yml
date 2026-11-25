@@ -12,4 +12,4 @@ spring:
     default-property-inclusion: non_null
 
 electro-accountant:
-  data-dir: ${ELECTRO_ACCOUNTANT_DATA_DIR:${user.home}/AppData/Local/ElectroAccountant/data}
+  data-dir: ${ELECTRO_ACCOUNTANT_DATA_DIR:${user.home}/AppData/Local/ElectroAccountant/1.0.2/data}

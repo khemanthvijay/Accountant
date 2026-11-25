@@ -15,7 +15,7 @@ import com.electroaccountant.shared.Quantity;
     private void apply(Map<String,State> states,Event e){State s=states.computeIfAbsent(e.item,ignored->new State());if(e.sale){long qty=-e.qty;long cost=s.qty==0?0:BigDecimal.valueOf(s.value).multiply(BigDecimal.valueOf(qty)).divide(BigDecimal.valueOf(s.qty),0,RoundingMode.HALF_UP).longValue();s.qty-=qty;s.value-=cost;}else{s.qty+=e.qty;s.value+=e.value;}}
     private List<Event> eventsUntil(LocalDate to){return jdbc.query("""
         SELECT item_id,event_date,event_time,event_kind,quantity_scaled,value_minor FROM (
-          SELECT sm.item_id,sm.movement_date event_date,sm.created_at event_time,'OPENING' event_kind,sm.quantity_delta_scaled,i.opening_rate_minor*sm.quantity_delta_scaled value_minor FROM stock_movement sm JOIN inventory_item i ON i.id=sm.item_id WHERE sm.movement_type='OPENING'
+          SELECT sm.item_id,sm.movement_date event_date,sm.created_at event_time,'OPENING' event_kind,sm.quantity_delta_scaled AS quantity_scaled,i.opening_rate_minor*sm.quantity_delta_scaled value_minor FROM stock_movement sm JOIN inventory_item i ON i.id=sm.item_id WHERE sm.movement_type='OPENING'
           UNION ALL SELECT pl.item_id,pe.entry_date,pe.created_at,'PURCHASE',pl.quantity_scaled,pl.line_total_minor FROM purchase_entry_line pl JOIN purchase_entry pe ON pe.id=pl.purchase_entry_id
           UNION ALL SELECT sl.item_id,se.entry_date,se.created_at,'SALE',-sl.quantity_scaled,0 FROM sales_entry_line sl JOIN sales_entry se ON se.id=sl.sales_entry_id
         ) WHERE event_date<=? ORDER BY event_date,event_time,CASE event_kind WHEN 'OPENING' THEN 0 WHEN 'PURCHASE' THEN 1 ELSE 2 END
