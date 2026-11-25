@@ -2,7 +2,8 @@
 param(
     [ValidateSet('app-image', 'exe', 'msi')]
     [string]$PackageType = 'app-image',
-    [switch]$Console
+    [switch]$Console,
+    [switch]$NoBrowser
 )
 
 $ErrorActionPreference = 'Stop'
@@ -60,10 +61,13 @@ $jpackageArguments = @(
     # nested dependencies cannot be reliably analyzed by jlink during packaging.
     # A larger installer is preferable to a launcher that cannot start its JVM.
     '--runtime-image', $env:JAVA_HOME,
-    '--java-options', '-Delectro.accountant.open-browser=true',
     '--java-options', '-Delectro.accountant.desktop-mode=true',
     '--java-options', '-Dserver.address=127.0.0.1'
 )
+
+if (-not $NoBrowser) {
+    $jpackageArguments += @('--java-options', '-Delectro.accountant.open-browser=true')
+}
 
 if ($PackageType -ne 'app-image') {
     $jpackageArguments += @('--win-dir-chooser', '--win-menu', '--win-shortcut')

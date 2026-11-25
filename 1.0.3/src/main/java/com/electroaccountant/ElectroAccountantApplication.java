@@ -13,8 +13,11 @@ import org.springframework.context.annotation.Bean;
 public class ElectroAccountantApplication {
     public static void main(String[] args) {
         SpringApplication application = new SpringApplication(ElectroAccountantApplication.class);
-        // The packaged Windows launcher uses Desktop.browse to open the local UI.
-        application.setHeadless(false);
+        // The installed Windows app needs AWT only when it opens the user's browser.
+        // Keeping CI/headless launches headless avoids requiring an interactive desktop.
+        if (Boolean.getBoolean("electro.accountant.open-browser")) {
+            application.setHeadless(false);
+        }
         application.run(args);
     }
 

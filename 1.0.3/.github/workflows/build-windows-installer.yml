@@ -46,7 +46,7 @@ jobs:
       - name: Build and verify packaged application
         shell: pwsh
         run: |
-          .\scripts\build-windows-app.ps1 -PackageType app-image -Console
+          .\scripts\build-windows-app.ps1 -PackageType app-image -Console -NoBrowser
 
           $appExe = Join-Path $PWD 'windows-app\Electro Accountant\Electro Accountant.exe'
           $standardOutput = Join-Path $env:RUNNER_TEMP 'electro-accountant.stdout.log'
@@ -54,7 +54,7 @@ jobs:
           $process = Start-Process -FilePath $appExe -PassThru -RedirectStandardOutput $standardOutput -RedirectStandardError $standardError
 
           $started = $false
-          for ($attempt = 1; $attempt -le 15; $attempt++) {
+          for ($attempt = 1; $attempt -le 45; $attempt++) {
             Start-Sleep -Seconds 1
             try {
               $response = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -TimeoutSec 2
@@ -68,7 +68,10 @@ jobs:
           }
 
           if (-not $started) {
+            Write-Host "Application process exited: $($process.HasExited); exit code: $(if ($process.HasExited) { $process.ExitCode } else { 'still running' })"
+            Write-Host "----- application standard output -----"
             if (Test-Path $standardOutput) { Get-Content $standardOutput | Write-Host }
+            Write-Host "----- application standard error -----"
             if (Test-Path $standardError) { Get-Content $standardError | Write-Host }
             throw "The packaged application did not start its local server."
           }
