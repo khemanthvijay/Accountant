@@ -1,0 +1,6 @@
+package com.electroaccountant.expenses;
+import java.util.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import com.electroaccountant.shared.ApiException;
+@Service public class ExpenseTypeService { private final ExpenseTypeRepository repository;public ExpenseTypeService(ExpenseTypeRepository repository){this.repository=repository;}public List<ExpenseTypeResponse> all(){return repository.all().stream().map(r->new ExpenseTypeResponse(r.id(),r.name(),r.accountCode())).toList();}public ExpenseTypeRepository.Row required(String id){return repository.find(id).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"Expense type not found"));}public ExpenseTypeResponse create(CreateExpenseTypeRequest request){String name=request.name().trim();String code=name.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]+","_").replaceAll("^_+|_+$","");if(code.isBlank())throw new ApiException(HttpStatus.BAD_REQUEST,"Expense type needs letters or numbers");String id=UUID.randomUUID().toString();try{repository.insert(id,name,code);return new ExpenseTypeResponse(id,name,code);}catch(Exception ex){throw new ApiException(HttpStatus.CONFLICT,"An expense type with that name already exists");}} }

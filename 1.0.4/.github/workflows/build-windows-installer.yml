@@ -1,21 +1,18 @@
-name: Build Electro Accountant 1.0.3 installer
+name: Build Windows installer
 
 on:
   workflow_dispatch:
   push:
     tags:
-      - 'v1.0.3*'
+      - 'v*'
 
 permissions:
   contents: read
 
 jobs:
   build-windows-installer:
-    name: Build 1.0.3 Windows installer
+    name: Build Windows installer
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: ./1.0.3
 
     steps:
       - name: Check out source
@@ -27,7 +24,6 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-          cache-dependency-path: 1.0.3/pom.xml
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v7
@@ -90,7 +86,7 @@ jobs:
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: Electro-Accountant-1.0.3-Windows-Installer
-          path: 1.0.3/windows-app/*.exe
+          name: Electro-Accountant-1.0.4-Windows-Installer
+          path: windows-app/*.exe
           if-no-files-found: error
           retention-days: 30

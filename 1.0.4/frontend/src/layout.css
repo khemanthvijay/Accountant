@@ -1,0 +1,4 @@
+/* List and detail registers use the full available workspace. */
+.wide-form { max-width: none; }
+.journal { margin: 12px 0; padding: 14px; border: 1px solid #e0e6df; border-radius: 8px; }
+.journal p { margin: 4px 0 10px; }

@@ -1,0 +1,96 @@
+name: Build Electro Accountant 1.0.4 installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v1.0.4*'
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-installer:
+    name: Build 1.0.4 Windows installer
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./1.0.4
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: 1.0.4/pom.xml
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Install WiX Toolset
+        shell: pwsh
+        run: |
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset --no-progress --yes
+          }
+          $candle = Get-ChildItem -Path ${env:ProgramFiles(x86)} -Filter 'candle.exe' -File -Recurse -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if (-not $candle) {
+            throw "WiX Toolset was not installed correctly."
+          }
+          $candle.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Build and verify packaged application
+        shell: pwsh
+        run: |
+          .\scripts\build-windows-app.ps1 -PackageType app-image -Console -NoBrowser
+
+          $appExe = Join-Path $PWD 'windows-app\Electro Accountant\Electro Accountant.exe'
+          $standardOutput = Join-Path $env:RUNNER_TEMP 'electro-accountant.stdout.log'
+          $standardError = Join-Path $env:RUNNER_TEMP 'electro-accountant.stderr.log'
+          $process = Start-Process -FilePath $appExe -PassThru -RedirectStandardOutput $standardOutput -RedirectStandardError $standardError
+
+          $started = $false
+          for ($attempt = 1; $attempt -le 45; $attempt++) {
+            Start-Sleep -Seconds 1
+            try {
+              $response = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -TimeoutSec 2
+              if ($response.StatusCode -eq 200) {
+                $started = $true
+                break
+              }
+            } catch {
+              if ($process.HasExited) { break }
+            }
+          }
+
+          if (-not $started) {
+            Write-Host "Application process exited: $($process.HasExited); exit code: $(if ($process.HasExited) { $process.ExitCode } else { 'still running' })"
+            Write-Host "----- application standard output -----"
+            if (Test-Path $standardOutput) { Get-Content $standardOutput | Write-Host }
+            Write-Host "----- application standard error -----"
+            if (Test-Path $standardError) { Get-Content $standardError | Write-Host }
+            throw "The packaged application did not start its local server."
+          }
+
+          Invoke-WebRequest -Method Post -Uri 'http://127.0.0.1:8080/api/application/stop' -TimeoutSec 5 | Out-Null
+          $process.WaitForExit(10000) | Out-Null
+
+      - name: Build installer
+        shell: pwsh
+        run: .\scripts\build-windows-app.ps1 -PackageType exe
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Electro-Accountant-1.0.4-Windows-Installer
+          path: 1.0.4/windows-app/*.exe
+          if-no-files-found: error
+          retention-days: 30

@@ -4,4 +4,41 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.electroaccountant.journal.JournalService;
 import com.electroaccountant.shared.*;
-@Service public class ExpenseService { private final ExpenseRepository repository;private final ExpenseTypeService types;private final JournalService journals;public ExpenseService(ExpenseRepository repository,ExpenseTypeService types,JournalService journals){this.repository=repository;this.types=types;this.journals=journals;} public List<ExpenseResponse> all(){return repository.all().stream().map(this::response).toList();} @Transactional public ExpenseResponse create(CreateExpenseRequest request){ExpenseTypeRepository.Row type=types.required(request.expenseTypeId());long amount=Money.toMinor(request.amount());String id=UUID.randomUUID().toString();String description=description(request,type);repository.insert(id,request,type.id(),amount,description);journals.postExpense(id,request.expenseDate(),type.accountCode(),description,amount,com.electroaccountant.trade.PaymentType.CASH,com.electroaccountant.receivables.ReceiptMethod.CASH);return new ExpenseResponse(id,request.expenseDate(),type.id(),type.name(),description,clean(request.notes()),Money.fromMinor(amount));} private ExpenseResponse response(ExpenseRepository.Row r){return new ExpenseResponse(r.id(),r.date(),r.typeId(),r.typeName(),r.description(),r.notes(),Money.fromMinor(r.amount()));}private String description(CreateExpenseRequest r,ExpenseTypeRepository.Row type){String v=clean(r.description());return v==null?type.name()+" expense":v;}private String clean(String v){return v==null||v.isBlank()?null:v.trim();} }
+
+@Service 
+public class ExpenseService { 
+    private final ExpenseRepository repository;
+    private final ExpenseTypeService types;
+    private final JournalService journals;
+    public ExpenseService(ExpenseRepository repository,ExpenseTypeService types,JournalService journals){
+        this.repository=repository;
+        this.types=types;
+        this.journals=journals;
+        } 
+    public List<ExpenseResponse> all(){
+        return repository.all()
+                .stream()   
+                .map(this::response)
+                .toList();} 
+                    
+    @Transactional 
+    public ExpenseResponse create(CreateExpenseRequest request){
+        ExpenseTypeRepository.Row type=types.required(request.expenseTypeId());
+        long amount=Money.toMinor(request.amount());
+        String id=UUID.randomUUID().toString();
+        String description=description(request,type);
+        repository.insert(id,request,type.id(),amount,description);
+        journals.postExpense(id,request.expenseDate(),type.accountCode(),description,amount,com.electroaccountant.trade.PaymentType.CASH,com.electroaccountant.receivables.ReceiptMethod.CASH);
+        return new ExpenseResponse(id,request.expenseDate(),type.id(),type.name(),description,clean(request.notes()),Money.fromMinor(amount));
+        } 
+
+    private ExpenseResponse response(ExpenseRepository.Row r){
+            return new ExpenseResponse(r.id(),r.date(),r.typeId(),r.typeName(),r.description(),r.notes(),Money.fromMinor(r.amount()));
+            }
+    private String description(CreateExpenseRequest r,ExpenseTypeRepository.Row type){
+        String v=clean(r.description());return v==null?type.name()+" expense":v;
+        }
+    private String clean(String v){
+        return v==null||v.isBlank()?null:v.trim();
+    } 
+}

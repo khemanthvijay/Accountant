@@ -1,0 +1,15 @@
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: 8080
+
+spring:
+  application:
+    name: electro-accountant
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+
+electro-accountant:
+  data-dir: ${ELECTRO_ACCOUNTANT_DATA_DIR:${user.home}/AppData/Local/ElectroAccountant/1.0.4/data}
