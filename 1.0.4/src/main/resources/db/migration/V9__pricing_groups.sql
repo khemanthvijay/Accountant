@@ -27,7 +27,6 @@ CREATE TABLE pricing_quantity_adjustment (
 ) STRICT;
 
 ALTER TABLE sales_entry ADD COLUMN payment_type_v2 TEXT NOT NULL DEFAULT 'CASH' CHECK (payment_type_v2 IN ('CASH', 'BANK', 'CREDIT'));
-UPDATE sales_entry SET payment_type_v2 = payment_type;
 
 CREATE INDEX idx_pricing_group_item_item ON pricing_group_item(item_id);
 CREATE INDEX idx_pricing_quantity_group_minimum ON pricing_quantity_adjustment(pricing_group_id, minimum_quantity_scaled);
